@@ -86,6 +86,72 @@
 /************************************************************************/
 /******/ ({
 
+/***/ "./src/data/data.js":
+/*!**************************!*\
+  !*** ./src/data/data.js ***!
+  \**************************/
+/*! exports provided: showTime */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "showTime", function() { return showTime; });
+Date.prototype.format = function (format = 'yyyy-mm-dd') {
+  const replaces = {
+    yyyy: this.getFullYear(),
+    mm: ('0' + (this.getMonth() + 1)).slice(-2),
+    dd: ('0' + this.getDate()).slice(-2),
+    hh: ('0' + this.getHours()).slice(-2),
+    MM: ('0' + this.getMinutes()).slice(-2),
+    ss: ('0' + this.getSeconds()).slice(-2)
+  };
+  let result = format;
+
+  for (const replace in replaces) {
+    result = result.replace(replace, replaces[replace]);
+  }
+
+  return result;
+};
+
+var date = new Date();
+var options = {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  weekday: 'long',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric'
+};
+dataCreateNewRu = new Date().format('yyyy/mm/dd hh:MM:ss');
+dataCreateNewEn = date.toLocaleString("en-US", options);
+let button = document.createElement('button');
+button.className = 'time_ru';
+button.innerHTML = dataCreateNewRu + '    1';
+
+function showTime(el) {
+  console.log(el.options[el.selectedIndex].value);
+  button.remove();
+
+  if (el.options[el.selectedIndex].value === 'ru_time') {
+    button.className = 'time_ru';
+    button.innerHTML = dataCreateNewRu;
+  }
+
+  if (el.options[el.selectedIndex].value === 'en_time') {
+    button.className = 'time_en';
+    button.innerHTML = dataCreateNewEn;
+  }
+
+  document.getElementById('vivod_time').prepend(button);
+}
+
+;
+
+
+/***/ }),
+
 /***/ "./src/main.js":
 /*!*********************!*\
   !*** ./src/main.js ***!
@@ -95,19 +161,32 @@
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _utils_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils/utils */ "./src/utils/utils.js");
-/* harmony import */ var _speech_speech__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./speech/speech */ "./src/speech/speech.js");
-/* harmony import */ var _translate_translate__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./translate/translate */ "./src/translate/translate.js");
+/* harmony import */ var _speech_speech__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./speech/speech */ "./src/speech/speech.js");
+/* harmony import */ var _zapros_zapros__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./zapros/zapros */ "./src/zapros/zapros.js");
+/* harmony import */ var _data_data__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./data/data */ "./src/data/data.js");
+/* harmony import */ var _translate_translate__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./translate/translate */ "./src/translate/translate.js");
+
+/* Speech API */
+
+Object(_speech_speech__WEBPACK_IMPORTED_MODULE_0__["speechButtonHandler"])();
+Object(_speech_speech__WEBPACK_IMPORTED_MODULE_0__["yesNoButtonHandler"])();
+Object(_speech_speech__WEBPACK_IMPORTED_MODULE_0__["cardFactory"])();
+Object(_speech_speech__WEBPACK_IMPORTED_MODULE_0__["renderResult"])();
+Object(_speech_speech__WEBPACK_IMPORTED_MODULE_0__["updateCard"])();
+Object(_speech_speech__WEBPACK_IMPORTED_MODULE_0__["updateCard"])(-1);
+/* zapros Golosom */
 
 
+Object(_zapros_zapros__WEBPACK_IMPORTED_MODULE_1__["zaprosGolosom"])();
+/* Time */
 
-Object(_utils_utils__WEBPACK_IMPORTED_MODULE_0__["getMessage"])(); // Speech functions
 
-Object(_speech_speech__WEBPACK_IMPORTED_MODULE_1__["speechApi"])(); //createItems();
-//deleteItem();
-//Translate functions
+Object(_data_data__WEBPACK_IMPORTED_MODULE_2__["showTime"])();
+/* Language */
 
-Object(_translate_translate__WEBPACK_IMPORTED_MODULE_2__["translateApi"])();
+
+Object(_translate_translate__WEBPACK_IMPORTED_MODULE_3__["showLang"])();
+Object(_translate_translate__WEBPACK_IMPORTED_MODULE_3__["fetchLang"])();
 
 /***/ }),
 
@@ -115,46 +194,198 @@ Object(_translate_translate__WEBPACK_IMPORTED_MODULE_2__["translateApi"])();
 /*!******************************!*\
   !*** ./src/speech/speech.js ***!
   \******************************/
-/*! exports provided: speechApi */
+/*! exports provided: speechButtonHandler, yesNoButtonHandler, cardFactory, renderResult, updateCard */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "speechApi", function() { return speechApi; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "speechButtonHandler", function() { return speechButtonHandler; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "yesNoButtonHandler", function() { return yesNoButtonHandler; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "cardFactory", function() { return cardFactory; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "renderResult", function() { return renderResult; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "updateCard", function() { return updateCard; });
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const IS_SPEECH_REC_SUPPORTED = false
+/* !!SpeechRecognition */
+;
+const QUESTIONS = [`Вам больше 20 лет?`, `Вы мужчина?`, `Имеете высше образование?`, `Имеете постоянное место работы?`, `Есть ли в имуществе автомобиль?`, `Больше двух раз  в год бываете за пределами РБ?`, `Есть ли пожелания?`];
+let YES_STRING = 'да';
+let NO_STRING = 'нет';
+let lang;
+let places;
+let langSpeach;
+const ANSWERS = new Array(QUESTIONS.length).fill('');
+const CARD_WRAPPER = document.querySelector('#card-wrapper');
+let place = document.querySelector("#start-text");
+let words = document.querySelector("#start-text").innerText;
+const speechRecognition = new SpeechRecognition();
+
+function speechButtonHandler(index) {
+  speechRecognition.start();
+
+  speechRecognition.onresult = function (event) {
+    ANSWERS[index] = event.results[0][0].transcript;
+    console.log(ANSWERS[index]);
+    speechRecognition.stop();
+    updateCard(index);
+  };
+}
+
+function yesNoButtonHandler(index, value) {
+  ANSWERS[index] = value;
+  updateCard(index);
+}
+
+function cardFactory(index) {
+  const card = document.createElement('div');
+  card.className = 'questions';
+  const questionElement = document.createElement('p');
+  questionElement.className = 'questionsNumber';
+  questionElement.innerText = QUESTIONS[index];
+  let answerElement;
+
+  if (IS_SPEECH_REC_SUPPORTED) {
+    answerElement = document.createElement('button');
+    answerElement.className = 'say';
+    answerElement.innerText = 'Говорите';
+    answerElement.addEventListener('click', speechButtonHandler.bind(answerElement, index));
+  } else {
+    answerElement = document.createElement('div');
+    answerElement.className = 'container';
+    const yesButton = document.createElement('button');
+    yesButton.className = 'da';
+    const noButton = document.createElement('button');
+    noButton.className = 'net';
+    yesButton.innerText = YES_STRING;
+    noButton.innerText = NO_STRING;
+    yesButton.addEventListener('click', yesNoButtonHandler.bind(yesButton, index, YES_STRING));
+    noButton.addEventListener('click', yesNoButtonHandler.bind(noButton, index, NO_STRING));
+    answerElement.appendChild(yesButton);
+    answerElement.appendChild(noButton);
+  }
+
+  card.appendChild(questionElement);
+  card.appendChild(answerElement);
+  return card;
+}
+
+function renderResult() {
+  const result = document.createElement('div');
+  result.className = 'result';
+  const {
+    yes,
+    no
+  } = ANSWERS.reduce((acc, val) => {
+    if (val === YES_STRING) {
+      acc.yes += 1;
+    }
+
+    if (val === NO_STRING) {
+      acc.no += 1;
+    }
+
+    return acc;
+  }, {
+    yes: 0,
+    no: 0
+  });
+  result.innerText = `Ответов ДА: ${yes} | Ответов НЕТ: ${no}`;
+  return result;
+}
+
+function updateCard(currentIndex) {
+  if (CARD_WRAPPER.firstChild) {
+    CARD_WRAPPER.firstChild.remove();
+  }
+
+  const nextIndex = currentIndex + 1;
+  const toRender = nextIndex > QUESTIONS.length - 1 ? renderResult() : cardFactory(nextIndex);
+  CARD_WRAPPER.appendChild(toRender);
+  /*   showLang(el);
+    fetchLang(lang, toRender); */
+}
+
+updateCard(-1);
+
+
+/***/ }),
+
+/***/ "./src/translate/translate.js":
+/*!************************************!*\
+  !*** ./src/translate/translate.js ***!
+  \************************************/
+/*! exports provided: fetchLang, showLang */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchLang", function() { return fetchLang; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "showLang", function() { return showLang; });
+const MY_KEY = 'trnsl.1.1.20200513T181152Z.4d4e85ca50535b2d.6b5a939dabd11a5f247e618137da5ca57ae3beea';
+console.log(words);
+
+function showLang(el) {
+  console.log(el.options[el.selectedIndex].value);
+
+  if (el.options[el.selectedIndex].value === 'en') {
+    lang = 'ru-en';
+    langSpeach = 'en';
+    YES_STRING = 'yes';
+    NO_STRING = 'no';
+  } else {
+    lang = 'en-ru';
+    langSpeach = 'ru';
+    YES_STRING = 'да';
+    NO_STRING = 'нет';
+  }
+
+  speechRecognition.lang = langSpeach;
+  return fetchLang(lang, words, places, place);
+}
+
+;
+
+function fetchLang(lang, words, places, place) {
+  fetch('https://translate.yandex.net/api/v1.5/tr.json/translate?key=' + MY_KEY + '&text=' + words + '&lang=' + lang).then(response => {
+    /* console.log(response.json()); */
+    response.json().then(data => {
+      console.log(data.text[0]);
+      places = data.text[0];
+      place.innerText = places;
+      console.log(place);
+    });
+  }).catch(() => {
+    console.log('Status Error');
+  });
+}
+
+
+
+/***/ }),
+
+/***/ "./src/zapros/zapros.js":
+/*!******************************!*\
+  !*** ./src/zapros/zapros.js ***!
+  \******************************/
+/*! exports provided: zaprosGolosom */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "zaprosGolosom", function() { return zaprosGolosom; });
 let searchForm = document.querySelector('#search-form');
 let searchFormInput = document.querySelector('input');
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let newArr = []; //Хранение всех вопросов 
 
-let answerCollect = new Set(); // Хранения всех ответов
-
-function createItems() {
-  // Генерирование по одному вопросу через цикл
-  for (let i = 0; i < 10; i++) {
-    let block = document.createElement('div');
-    block.className = `cont${i + 1}`;
-    block.innerText = `Вопрос под номером ${i + 1}`;
-    document.getElementById('container').appendChild(block);
-    newArr.push(block);
-  }
-}
-
-function deleteItem() {
-  //Удаление вопроса после ответа
-  newArr.shift();
-}
-
-document.getElementById('kviz').addEventListener('click', createItems);
-console.log(newArr);
-
-function speechApi() {
+function zaprosGolosom() {
   if (SpeechRecognition) {
     searchForm.insertAdjacentHTML('beforeend', '<button type="button"><i class="fas fa-microphone"></i></button>');
     const microBtn = document.querySelector('button');
     const microIcon = document.querySelector('i');
     console.log('Hi, Chrome');
     let recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    /*     recognition.continuous = true; */
+
     microBtn.addEventListener('click', () => {
       if (microIcon.classList.contains('fa-microphone')) {
         recognition.start();
@@ -174,82 +405,22 @@ function speechApi() {
     });
     recognition.addEventListener('result', event => {
       console.log(event);
-      /* console.log(event.results)[0][0]; */
+      let resultCurrent = event.results[0][0].transcript;
 
-      for (let answer of event.results) {
-        console.log('Answer --', answer[0].transcript);
-        answerCollect.add(answer[0].transcript); //добавление нового ответа
-      }
-
-      if (answerCollect.size < 10) {
-        // Удаление вопроса на странице
-        deleteItem();
-        document.getElementById('container').innerHTML = ' ';
-        newArr.map(elem => {
-          document.getElementById('container').appendChild(elem);
-        });
-      }
-      /* let resultCurrent = event.results[0][0].transcript;
-      searchFormInput.value = resultCurrent;
-      setTimeout(()=>{
+      if (resultCurrent.includes(`найти`) == true) {
+        searchFormInput.value = resultCurrent.slice(0, -5);
+        console.log(searchFormInput.value);
+        setTimeout(() => {
           searchForm.submit();
-      }, 500) */
+        }, 500);
+      }
 
-
-      console.log('Все ответы -', answerCollect);
+      ;
     });
   } else {
     console.log('no');
   }
 }
-
-;
-
-
-/***/ }),
-
-/***/ "./src/translate/translate.js":
-/*!************************************!*\
-  !*** ./src/translate/translate.js ***!
-  \************************************/
-/*! exports provided: translateApi */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "translateApi", function() { return translateApi; });
-const MY_KEY = 'trnsl.1.1.20200510T121507Z.4e0c22fb2adef5e4.46cb825344b5b2307f6a92a87a1bd8fe2f755942';
-let words = document.querySelector('#start-text').innerText;
-
-function translateApi() {
-  fetch('1https://translate.yandex.net/api/v1.5/tr.json/translate?key=' + MY_KEY + '&text=' + words + '&lang=ru-en').then(response => {
-    /*  console.log(response.json()); */
-    response.json().then(data => {
-      console.log(data.text[0]);
-      document.querySelector('#end-text').innerText = data.text[0];
-    });
-  }).catch(() => {
-    console.log('Status Error!!!');
-  });
-}
-
-
-
-/***/ }),
-
-/***/ "./src/utils/utils.js":
-/*!****************************!*\
-  !*** ./src/utils/utils.js ***!
-  \****************************/
-/*! exports provided: getMessage */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getMessage", function() { return getMessage; });
-const getMessage = () => {
-  confirm("Hello World");
-};
 
 
 
