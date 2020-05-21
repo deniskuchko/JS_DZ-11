@@ -1,0 +1,27 @@
+{
+  "name": "new-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "description",
+  "scripts": {
+    "build": "webpack",
+    "eslint": "eslint src/**/*.js",
+    "start": "webpack-dev-server --open",
+    "test": "npm run eslint"
+  },
+  "devDependencies": {
+    "@babel/core": "7.9.0",
+    "@babel/preset-env": "7.9.0",
+    "babel-loader": "8.1.0",
+    "copy-webpack-plugin": "^5.1.1",
+    "eslint": "6.8.0",
+    "html-webpack-plugin": "^4.0.2",
+    "webpack": "4.42.1",
+    "webpack-cli": "3.3.11",
+    "webpack-dev-server": "3.10.3"
+  },
+  "engines": {
+    "node": "10"
+  },
+  "dependencies": {}
+}

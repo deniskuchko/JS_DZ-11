@@ -1,0 +1,58 @@
+body{
+    margin: 0;
+    padding: 0;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #031321;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+p{
+    color: wheat;
+}
+.main{
+    display: grid;
+    text-align: center;
+    margin: 0 auto;
+}
+#vivod_time{
+    position: absolute;
+    top: 20px;
+    right: 0px;
+}
+.time_lang{
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}
+.result{
+    color: #2196f3;
+}
+.container button, .questions p, .questions .say{
+    border: none;
+    background: none;
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 24px;
+    outline: none;
+} 
+.container button{
+    width: 60px;
+    height: 30px;
+}
+.container button:hover,  .questions .say:hover{
+    color: #21f360;
+    background: #2196f3;
+    box-shadow: 0 0 10px #2196f3, 0 0 40px #2196f3, 0 0 80px #2196f3;
+    transition-delay: 0.5s;
+}
+.questions{
+    color: white;
+    display: block;
+}
+.questions p{color:#21f360}
+
